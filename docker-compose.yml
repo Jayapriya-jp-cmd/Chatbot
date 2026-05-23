@@ -1,0 +1,41 @@
+services:
+  ingestion:
+    build: ./ingestion
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATABASE_URL=file:/app/db/logs.db
+    volumes:
+      - ./shared-db:/app/db
+      - ./ingestion:/app
+      - /app/node_modules
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - INGESTION_URL=http://ingestion:3001/api/logs
+      - DATABASE_URL=file:/app/db/chat.db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./shared-db:/app/db
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - ingestion
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
